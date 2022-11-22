@@ -55,10 +55,10 @@ impl Sorted {
 fn main() {
     let mut sorted = Sorted::new(Box::new(FirstStrategySorting::new()));
     let mut data = vec![4, 67, 2, 7, 5];
-    sorted.sort(&mut data[..]);
+    sorted.sort(&mut data);
     println!("{:?}", data);
     let mut data = vec![4, 67, 2, 7, 5];
     sorted.set_sorting(Box::new(SecondStrategySorting::new()));
-    sorted.sort(&mut data[..]);
+    sorted.sort(&mut data);
     println!("{:?}", data);
 }
