@@ -1,68 +1,46 @@
-/*
-* Шаблон «Хранитель» фиксирует и хранит текущее состояние объекта, чтобы оно легко восстанавливалось.
-* Шаблон «Хранитель» позволяет восстанавливать объект в его предыдущем состоянии (отмена через откат — undo via rollback).
+/**
+* Не нарушая инкапсуляции, фиксирует и выносит за пределы объекта его внутреннее состояние так, чтобы позднее можно было восстановить в нем объект.
 *
 * Применимость:
-* - когда вам нужно сохранять мгновенные снимки состояния объекта (или его части), чтобы впоследствии объект можно было восстановить в том же состоянии.
-* - когда прямое получение состояния объекта раскрывает приватные детали его реализации, нарушая инкапсуляцию.
- */
+* - необходимо сохранить мгновенный снимок состояния объекта (или его части), чтобы впоследствии объект можно было восстановить в том же состоянии
+* - прямое получение этого состояния раскрывает детали реализации и нарушает инкапсуляцию объекта
+**/
+
 struct MementoArticle {
     state: String
 }
 
-impl MementoArticle {
-    fn new(state: &str) -> Self {
-        MementoArticle { state: state.to_string() }
-    }
-    fn get_state(&mut self) -> &str {
-        &self.state
-    }
-}
-
 struct Article {
-    content: Option<String>,
-    mementos: Vec<MementoArticle>
+    content: String,
 }
 
 impl Article {
     fn new() -> Self {
-        Article { content: None, mementos: vec![]}
+        Article { content: Default::default()}
     }
-    fn undo(&mut self) {
-        match self.mementos.pop() {
-            Some(mut memento) => self.content = Some(memento.get_state().to_string()),
-            None => self.content = None
-        }
+    fn set_memento(&mut self, memento: MementoArticle) {
+        self.content = memento.state;
     }
-    fn get_content(&self) -> Option<&str> {
-        if let Some(ref content) = self.content {
-            return Some(content)
-        }
-        None
+    fn get_memento(&self) -> MementoArticle {
+        MementoArticle { state: self.content.clone() }
     }
     fn set_content(&mut self, content: &str) {
-        if let Some(ref content) = self.content {
-            self.mementos.push(MementoArticle::new(content));
-        }
-        self.content = Some(content.to_string());
+        self.content = content.to_string();
+    }
+    fn get_content(&self) -> &str {
+        &self.content
     }
 }
 
 fn main(){
     let mut article = Article::new();
-    println!("{:?}", article.get_content());
     article.set_content("First content");
     println!("{:?}", article.get_content());
+
+    let memento = article.get_memento();
+
     article.set_content("Second content");
     println!("{:?}", article.get_content());
-    article.undo();
-    println!("{:?}", article.get_content());
-    article.undo();
-    println!("{:?}", article.get_content());
-    article.undo();
-    println!("{:?}", article.get_content());
-    article.set_content("Third content");
-    println!("{:?}", article.get_content());
-    article.undo();
+    article.set_memento(memento);
     println!("{:?}", article.get_content());
 }
