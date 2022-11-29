@@ -1,26 +1,34 @@
-/*
-* Шаблон «Посредник» подразумевает добавление стороннего объекта («посредника») для управления взаимодействием между двумя объектами («коллегами»).
-* Шаблон помогает уменьшить связанность (coupling) классов, общающихся друг с другом, ведь теперь они не должны знать о реализациях своих собеседников.
-* Шаблон определяет объект, который инкапсулирует способ взаимодействия набора объектов.
-* Здесь довольно легко добавить например проверки прав отсылки сообщений и тп
+/**
+* Определяет объект, инкапсулирующий способ взаимодействия множества объектов. Посредник обеспечивает слабую связанность системы,
+* избавляя объекты от необходимости явно ссылаться друг на друга и позволяя тем самым независимо изменять взаимодействие между ними.
 *
 * Применимость:
-* - когда вам сложно менять некоторые классы из-за того, что они имеют множество хаотичных связей с другими классами.
-* - когда вы не можете повторно использовать класс, поскольку он зависит от уймы других классов.
-* - когда вам приходится создавать множество подклассов компонентов, чтобы использовать одни и те же компоненты в разных контекстах.
- */
+* - имеются объекты, связи между которыми сложны и четко определены. Получающиеся при этом взаимозависимости не структурированы и трудны для понимания.
+* - нельзя повторно использовать объект, поскольку он обменивается информацией со многими другими объектами.
+* - поведение, распределенное между несколькими классами, должно поддаваться настройке без порождения множества подклассов.
+**/
 
 use std::{rc::{Weak, Rc}, cell::RefCell};
 
+#[derive(Clone, Copy, PartialEq)]
+enum UserKind {
+    Developer,
+    TeamLead
+}
+#[derive(Debug, Clone)]
+enum Event {
+    CreateUser,
+    ChangeUser
+}
 trait Colleague {
-    fn send(&self, msg: &str, to: u32);
-    fn recv(&self, msg: &str, from: u32);
-    fn id(&self) -> u32;
+    fn send(&self, event: Event);
+    fn recv(&self, event: Event);
+    fn kind(&self) -> UserKind;
 }
 
 trait Mediator {
-    fn send_msg(&mut self, from: u32, msg: &str, to: u32);
-    fn add_colleague(&mut self, colleague: Rc<dyn Colleague>);
+    fn send(&mut self, event: Event);
+    fn register(&mut self, colleague: Rc<dyn Colleague>);
 }
 struct MediatorColleague{
     colleagues: Vec<Weak<dyn Colleague>>,
@@ -33,63 +41,76 @@ impl MediatorColleague {
 }
 
 impl Mediator for MediatorColleague {
-    fn send_msg(&mut self, from: u32, msg: &str, to: u32) {
+    fn send(&mut self, event: Event) {
         let mut need = false;
-        for colleague in &self.colleagues {
-            match colleague.upgrade() {
-                Some(colleague) => {
-                    if colleague.id() == to {
-                        colleague.recv(msg, from);
+        match event {
+            Event::CreateUser => {
+                for colleague in &self.colleagues {
+                    match colleague.upgrade() {
+                        Some(colleague) => {
+                            if colleague.kind() == UserKind::TeamLead {
+                                colleague.recv(event.clone());
+                            }
+                        }
+                        None => need = true
                     }
-                }
-                None => need = true
+                }        
+            }
+            Event::ChangeUser => {
+                for colleague in &self.colleagues {
+                    match colleague.upgrade() {
+                        Some(colleague) => {
+                            colleague.recv(event.clone());
+                        }
+                        None => need = true
+                    }
+                }        
             }
         }
         if need {
             self.colleagues.retain(|x| x.upgrade().is_some());
         }
     }
-    fn add_colleague(&mut self, colleague: Rc<dyn Colleague>) {
+    fn register(&mut self, colleague: Rc<dyn Colleague>) {
         self.colleagues.push(Rc::downgrade(&colleague));
     }
 }
 
 struct User {
-    id: u32,
+    kind: UserKind,
     mediator: Weak<RefCell<dyn Mediator>>
 }
 
 impl User {
-    fn new(id: u32, mediator: Rc<RefCell<dyn Mediator>>) -> Self {
-        User{id, mediator: Rc::downgrade(&mediator)}
+    fn new(kind: UserKind, mediator: Rc<RefCell<dyn Mediator>>) -> Self {
+        User{kind, mediator: Rc::downgrade(&mediator)}
     }
 }
 
 impl Colleague for User {
-    fn recv(&self, msg: &str, from: u32) {
-        println!("Received message from user [{}] to user [{}]: [{}].", from, self.id, msg);
+    fn recv(&self, event: Event) {
+        println!("Received message [{:?}].", event);
     }
-    fn send(&self, msg: &str, id: u32) {
+    fn send(&self, event: Event) {
         if let Some(mediator) = self.mediator.upgrade() {
-            (*mediator).borrow_mut().send_msg(self.id, msg, id);
+            (*mediator).borrow_mut().send(event);
         }
     }
-    fn id(&self) -> u32 {
-        self.id
+    fn kind(&self) -> UserKind {
+        self.kind
     }
 }
 
 fn main(){
     let mediator = Rc::new(RefCell::new(MediatorColleague::new()));
 
-    let user1 = Rc::new(User::new(1, mediator.clone()));
-    (*mediator).borrow_mut().add_colleague(user1.clone());
-    let user2 = Rc::new(User::new(2, mediator.clone()));
-    (*mediator).borrow_mut().add_colleague(user2.clone());
-    let user3 = Rc::new(User::new(3, mediator.clone()));
-    (*mediator).borrow_mut().add_colleague(user3.clone());
+    let user1 = Rc::new(User::new(UserKind::TeamLead, mediator.clone()));
+    (*mediator).borrow_mut().register(user1.clone());
+    let user2 = Rc::new(User::new(UserKind::Developer, mediator.clone()));
+    (*mediator).borrow_mut().register(user2.clone());
+    let user3 = Rc::new(User::new(UserKind::Developer, mediator.clone()));
+    (*mediator).borrow_mut().register(user3.clone());
     
-
-    user1.send("Hello", 3);
-    user3.send("Hi", 1);
+    user2.send(Event::CreateUser);
+    user1.send(Event::ChangeUser);
 }
