@@ -1,80 +1,108 @@
-/*
-* Шаблон «Команда» позволяет инкапсулировать действия в объекты. Ключевая идея — предоставить средства отделения клиента от получателя.
-* Команда – это поведенческий паттерн проектирования, который превращает запросы в объекты, позволяя передавать их как аргументы при вызове методов,
-* ставить запросы в очередь, логировать их, а также поддерживать отмену операций.
-* В шаблоне «Команда» объект используется для инкапсуляции всей информации, необходимой для выполнения действия либо для его инициирования позднее.
-* Информация включает в себя имя метода; объект, владеющий методом; значения параметров метода.
+/**
+* Инкапсулирует запрос как объект, позволяя тем самым задавать параметры клиентов для обработки соответствующих запросов,
+* ставить запросы в очередь или прокотолировать их, а также поддерживать отмену операций.
 *
 * Применимость:
-* - когда вы хотите параметризовать объекты выполняемым действием.
-* - когда вы хотите ставить операции в очередь, выполнять их по расписанию или передавать по сети.
-* - когда вам нужна операция отмены (храним историю).
-*/
+* - когда нужно параметризовать объекты выполняемым действием
+* - когда нужно определять, ставить в очередь и выполнять запросы в разное время
+* - когда нужно поддерживать отмену операций
+* - когда нужно поддерживать протоколирование изменений, чтобы их можно было выполнить повторно после аварийной остановки системы
+**/
 
-struct System {}
-impl System {
-    fn new() -> Self {
-        System {  }
-    }
-    fn start(&self) {
-        println!("Start");
-    }
-    fn stop(&self) {
-        println!("Stop");
-    }
+struct SimulationSystem {}
+impl SimulationSystem {
+   fn new() -> Self {
+      SimulationSystem {  }
+   }
+   fn start(&self) {
+      println!("Command: start simulation system");
+   }
+   fn stop(&self) {
+      println!("Command: stop simulation system");
+   }
 }
 
- trait Command {
-    fn execute(&self);
- }
+struct StorageSystem{}
+impl StorageSystem {
+   fn new() -> Self {
+      StorageSystem {  }
+   }
+   fn save(&self){
+      println!("Command: save all results.");
+   }
+}
 
- struct StartCommand<'a>{
-    system: &'a System
- }
- impl <'a> StartCommand<'a> {
-    fn new(system: &'a System) -> Self {
-        StartCommand { system }
-    }
- }
- impl <'a> Command for StartCommand <'a> {
-    fn execute(&self) {
-        self.system.start();
-    }
- }
- struct StopCommand<'a>{
-    system: &'a System
- }
- impl <'a> StopCommand<'a> {
-    fn new(system: &'a System) -> Self {
-        StopCommand { system }
-    }
- }
- impl <'a> Command for StopCommand <'a> {
-    fn execute(&self) {
-        self.system.stop();
-    }
- }
+trait Command {
+   fn execute(&self);
+}
 
- struct UserInvoker<'a> {
-    start: StartCommand<'a>,
-    stop: StopCommand<'a>
- }
+struct StartCommand<'a>{
+   system: &'a SimulationSystem
+}
+impl <'a> StartCommand<'a> {
+   fn new(system: &'a SimulationSystem) -> Self {
+      StartCommand { system }
+   }
+}
+impl <'a> Command for StartCommand <'a> {
+   fn execute(&self) {
+      self.system.start();
+   }
+}
+struct StopCommand<'a>{
+   system: &'a SimulationSystem
+}
+impl <'a> StopCommand<'a> {
+   fn new(system: &'a SimulationSystem) -> Self {
+      StopCommand { system }
+   }
+}
+impl <'a> Command for StopCommand <'a> {
+   fn execute(&self) {
+      self.system.stop();
+   }
+}
 
- impl<'a> UserInvoker <'a> {
-     fn new(start: StartCommand<'a>, stop: StopCommand<'a>) -> Self {
-        UserInvoker { start, stop}
-     }
-     fn start_computer(&self){
-        self.start.execute();
-     }
-     fn stop_computer(&self){
-        self.stop.execute();
-     }
- }
+struct SaveCommand<'a> {
+   storage: &'a StorageSystem
+}
+impl <'a> SaveCommand<'a> {
+   fn new(storage: &'a StorageSystem) -> Self {
+      SaveCommand { storage }
+   }
+}
+impl <'a> Command for SaveCommand <'a> {
+   fn execute(&self) {
+      self.storage.save();
+   }
+}
+
+struct UserInvoker<'a> {
+   start: StartCommand<'a>,
+   save: SaveCommand<'a>,
+   stop: StopCommand<'a>
+}
+
+impl<'a> UserInvoker <'a> {
+   fn new(start: StartCommand<'a>, save: SaveCommand<'a>, stop: StopCommand<'a>) -> Self {
+      UserInvoker { start, save, stop}
+   }
+   fn start(&self){
+      self.start.execute();
+   }
+   fn save(&self){
+      self.save.execute();
+   }
+   fn stop(&self){
+      self.stop.execute();
+   }
+}
  
- fn main(){
-    let system = System::new();
-    let user = UserInvoker::new(StartCommand::new(&system), StopCommand::new(&system));
-    user.start_computer();
-    user.stop_computer();
- }
+fn main(){
+   let storage = StorageSystem::new();
+   let system = SimulationSystem::new();
+   let user = UserInvoker::new(StartCommand::new(&system), SaveCommand::new(&storage), StopCommand::new(&system));
+   user.start();
+   user.save();
+   user.stop();
+}
