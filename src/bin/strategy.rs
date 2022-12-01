@@ -1,71 +1,70 @@
-/*
- * Шаблон «Стратегия» позволяет переключаться между алгоритмами или стратегиями в зависимости от ситуации.
- * Шаблон «Стратегия» позволяет при выполнении выбирать поведение алгоритма.
+/**
+ * Определяет семество алгоритмов, инкапсулирует каждый из них и делает их взаимозаменяемыми. Стратегия позволяет изменять алгоритмы независимо от клиентов, которые ими пользуются
  *
  * Пирменимость:
- * - когда вам нужно использовать разные вариации какого-то алгоритма внутри одного объекта.
- * - когда у вас есть множество похожих классов, отличающихся только некоторым поведением.
- * - когда вы не хотите обнажать детали реализации алгоритмов для других классов.
- * - когда различные вариации алгоритмов реализованы в виде развесистого условного оператора. Каждая ветка такого оператора представляет собой вариацию алгоритма.
- */
+ * - когда имеется много родственных классов, отличающихся только поведением
+ * - когда вам нужно иметь несколько разных вариантов алгоритмов
+ * - когда в алгоритме содержаться данные, о которых клиент не должен знать
+ * - когда в классе определено много поведений, что представлено большим количество условных операторов
+ **/
 
 trait Sorting {
-    fn sort(&self, data: &mut [i32]);
+    fn sort(&self, data: &mut DataSet);
 }
 
-struct FirstStrategySorting {}
+struct FastSorting {}
 
-impl FirstStrategySorting {
+impl FastSorting {
     fn new() -> Self {
-        FirstStrategySorting {  }
+        FastSorting {  }
     }
 }
 
-impl Sorting for FirstStrategySorting {
-    fn sort(&self, data: &mut [i32]) {
-        println!("Used first strategy");
-        data.sort();
+impl Sorting for FastSorting {
+    fn sort(&self, obj: &mut DataSet) {
+        println!("Used fast sorting");
+        obj.data.sort();
     }
 }
 
-struct SecondStrategySorting {}
+struct RegularSorting {}
 
-impl SecondStrategySorting {
+impl RegularSorting {
+    #[allow(unused)]
     fn new() -> Self {
-        SecondStrategySorting {  }
+        RegularSorting {  }
     }
 }
 
-impl Sorting for SecondStrategySorting {
-    fn sort(&self, data: &mut [i32]){
-        println!("Used second strategy");
-        data.sort()
+impl Sorting for RegularSorting {
+    fn sort(&self, obj: &mut DataSet){
+        println!("Used regular sorting, but less memory is used");
+        obj.data.sort()
     }
 }
 
-struct Sorted {
-    sorting: Box<dyn Sorting>
+struct DataSet {
+    data: Vec<i32>,
+    sorting: Option<Box<dyn Sorting>>
 }
 
-impl Sorted {
-    fn new(sorting: Box<dyn Sorting>) -> Self {
-        Sorted { sorting }
+impl DataSet {
+    fn new(data: Vec<i32>, sorting: Box<dyn Sorting>) -> Self {
+        DataSet { data, sorting: Some(sorting) }
     }
-    fn sort(&self, data: &mut [i32]) {
-        self.sorting.sort(data);
+    fn sort(&mut self) {
+        let sorting = self.sorting.take().unwrap();
+        sorting.sort(self);
+        self.sorting = Some(sorting);
     }
+    #[allow(unused)]
     fn set_sorting(&mut self, sorting: Box<dyn Sorting>){
-        self.sorting = sorting;
+        self.sorting = Some(sorting);
     }
 }
 
 fn main() {
-    let mut sorted = Sorted::new(Box::new(FirstStrategySorting::new()));
-    let mut data = vec![4, 67, 2, 7, 5];
-    sorted.sort(&mut data);
-    println!("{:?}", data);
-    let mut data = vec![4, 67, 2, 7, 5];
-    sorted.set_sorting(Box::new(SecondStrategySorting::new()));
-    sorted.sort(&mut data);
-    println!("{:?}", data);
+    let mut data_set = DataSet::new(vec![4, 67, 2, 7, 5], Box::new(FastSorting::new()));
+    data_set.sort();
+    println!("{:?}", data_set.data);
 }
