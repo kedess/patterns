@@ -1,9 +1,12 @@
 /**
- * Позволяет объекту варьировать свое поведение в зависимости от внутреннего состояния. Извне создается впечатление, что изменился класс объекта
- * 
+ * Позволяет объекту варьировать свое поведение в зависимости от внутреннего
+ * состояния. Извне создается впечатление, что изменился класс объекта
+ *
  * Применимость:
- * - когда поведение объекта зависит от его состояния и должно изменяться во время работы
- * - когда в коде операций встречаются состоящие из многиъ ветвей условные лператоры, в которых выбор ветви зависит от состояния
+ * - когда поведение объекта зависит от его состояния и должно изменяться во
+ *   время работы
+ * - когда в коде операций встречаются состоящие из многиъ ветвей условные
+ *   операторы, в которых выбор ветви зависит от состояния
 **/
 
 trait ArticleState {
@@ -15,7 +18,7 @@ trait ArticleState {
 struct DraftState {}
 impl DraftState {
     fn new() -> Self {
-        DraftState {  }
+        DraftState {}
     }
 }
 impl ArticleState for DraftState {
@@ -36,7 +39,7 @@ impl ArticleState for DraftState {
 struct ApprovedState {}
 impl ApprovedState {
     fn new() -> Self {
-        ApprovedState {  }
+        ApprovedState {}
     }
 }
 impl ArticleState for ApprovedState {
@@ -57,7 +60,7 @@ impl ArticleState for ApprovedState {
 struct PublishedState {}
 impl PublishedState {
     fn new() -> Self {
-        PublishedState {  }
+        PublishedState {}
     }
 }
 impl ArticleState for PublishedState {
@@ -76,13 +79,16 @@ impl ArticleState for PublishedState {
 
 struct Article {
     content: String,
-    state: Option<Box<dyn ArticleState>>
+    state: Option<Box<dyn ArticleState>>,
 }
 impl Article {
     fn new() -> Self {
-        Article { content: "".to_string(), state: Some(Box::new(DraftState::new())) }
+        Article {
+            content: "".to_string(),
+            state: Some(Box::new(DraftState::new())),
+        }
     }
-    fn set_content(&mut self, text : &str){
+    fn set_content(&mut self, text: &str) {
         if let Some(mut state) = self.state.take() {
             state.edit(self, text);
         }
@@ -99,7 +105,7 @@ impl Article {
     }
 }
 
-fn main(){
+fn main() {
     let mut article = Article::new();
     article.set_content("Pattern state!");
     article.approve();

@@ -1,10 +1,14 @@
 /**
-* Представляет способ последовательного доступа ко всем элементам составного объекта, не раскрывая его внутреннего представления.
+* Представляет способ последовательного доступа ко всем элементам составного
+* объекта, не раскрывая его внутреннего представления.
 *
 * Применимость:
-* - для доступа к содержимому агрегированных объектов без раскрытия их внутреннего представления.
-* - для поддержки нескольких активных обходов одного и того же агрегированного объекта.
-* - для представления единообразного интерфейса с целью обхода различных агрегированных структур.
+* - для доступа к содержимому агрегированных объектов без раскрытия их
+*   внутреннего представления.
+* - для поддержки нескольких активных обходов одного и того же агрегированного
+*   объекта.
+* - для представления единообразного интерфейса с целью обхода различных
+*   агрегированных структур.
 **/
 
 #[derive(Clone)]
@@ -14,11 +18,14 @@ pub struct User {
 }
 impl User {
     fn new(id: usize, name: &str) -> Self {
-        User { id, name: name.to_string() }
+        User {
+            id,
+            name: name.to_string(),
+        }
     }
 }
 struct Colleagues {
-    users: Vec<User>
+    users: Vec<User>,
 }
 
 impl Colleagues {
@@ -29,13 +36,16 @@ impl Colleagues {
         self.users.push(user);
     }
     fn iterator(&self) -> ColleaguesIter {
-        ColleaguesIter { pos: 0, users: &self.users }
+        ColleaguesIter {
+            pos: 0,
+            users: &self.users,
+        }
     }
 }
 
 pub struct ColleaguesIter<'a> {
     pos: usize,
-    users: &'a[User]
+    users: &'a [User],
 }
 
 impl<'a> Iterator for ColleaguesIter<'a> {
@@ -48,7 +58,7 @@ impl<'a> Iterator for ColleaguesIter<'a> {
         return Some(&(self.users[self.pos - 1]));
     }
 }
-fn main(){
+fn main() {
     let mut colleagues = Colleagues::new();
     colleagues.add_user(User::new(1, "John"));
     colleagues.add_user(User::new(2, "Smith"));

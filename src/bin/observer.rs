@@ -1,21 +1,25 @@
+use std::cell::RefCell;
 /**
- ** Шаблон определяет зависимость между объектами, чтобы при изменении состояния одного из них все зависящие от него оповещаются и автоматически обновляются.
- * Применимость:
- * - когда при модификации одного объекта требуется изменить другие и вы не знаете, сколько именно объектов нужно изменить.
- * - когда один объект должен оповещать других, не делая предположений об уведомляемых объектах. Другими словами, вы не хотите, чтобы
- *   объекты были тесно связанны между собой.
+ *  Шаблон определяет зависимость между объектами, чтобы при изменении состояния
+ *  одного из них все зависящие от него оповещаются и автоматически обновляются.
  * 
+ * Применимость:
+ * - когда при модификации одного объекта требуется изменить другие и вы не 
+ *   знаете, сколько именно объектов нужно изменить.
+ * - когда один объект должен оповещать других, не делая предположений об 
+ *   уведомляемых объектах. Другими словами, вы не хотите, чтобы объекты были
+ *   тесно связанны между собой.
+ *
  * ! У данной реализации есть следующие проблемы:
- * ! - подписчик не может отписаться, ссылка на subscriber удалиться, но только во время следующего обновления publisher 
+ * ! - подписчик не может отписаться, ссылка на subscriber удалиться, но только
+ * !   во время следующего обновления publisher
  **/
-
 use std::rc::{Rc, Weak};
 use std::vec::Vec;
-use std::cell::RefCell;
 
 enum Message {
     Shop(String),
-    Storage((String, usize))
+    Storage((String, usize)),
 }
 
 trait Publisher {
@@ -28,12 +32,14 @@ trait Subscriber {
 }
 
 struct Shop {
-    subscribers: Vec<Weak<RefCell<dyn Subscriber>>>
+    subscribers: Vec<Weak<RefCell<dyn Subscriber>>>,
 }
 
 impl Shop {
     fn new() -> Self {
-        Shop { subscribers: Vec::new() }
+        Shop {
+            subscribers: Vec::new(),
+        }
     }
 }
 
@@ -41,12 +47,14 @@ impl Publisher for Shop {
     fn add_subscriber(&mut self, subscriber: Rc<RefCell<dyn Subscriber>>) {
         self.subscribers.push(Rc::downgrade(&subscriber));
     }
-    fn notify(&mut self){
+    fn notify(&mut self) {
         let mut need = false;
         for subscriber in &self.subscribers {
-            match subscriber.upgrade(){
-                Some(subscriber) => subscriber.borrow_mut().update(Message::Shop("New discounts".to_string())),
-                None => need = true
+            match subscriber.upgrade() {
+                Some(subscriber) => subscriber
+                    .borrow_mut()
+                    .update(Message::Shop("New discounts".to_string())),
+                None => need = true,
             }
         }
         if need {
@@ -56,12 +64,14 @@ impl Publisher for Shop {
 }
 
 struct Storage {
-    subscribers: Vec<Weak<RefCell<dyn Subscriber>>>
+    subscribers: Vec<Weak<RefCell<dyn Subscriber>>>,
 }
 
 impl Storage {
     fn new() -> Self {
-        Storage { subscribers: Vec::new() }
+        Storage {
+            subscribers: Vec::new(),
+        }
     }
 }
 
@@ -69,12 +79,14 @@ impl Publisher for Storage {
     fn add_subscriber(&mut self, subscriber: Rc<RefCell<dyn Subscriber>>) {
         self.subscribers.push(Rc::downgrade(&subscriber));
     }
-    fn notify(&mut self){
+    fn notify(&mut self) {
         let mut need = false;
         for subscriber in &self.subscribers {
-            match subscriber.upgrade(){
-                Some(subscriber) => subscriber.borrow_mut().update(Message::Storage(("Product has arrived".to_string(), 100))),
-                None => need = true
+            match subscriber.upgrade() {
+                Some(subscriber) => subscriber.borrow_mut().update(
+                    Message::Storage(("Product has arrived".to_string(), 100)),
+                ),
+                None => need = true,
             }
         }
         if need {
@@ -90,7 +102,7 @@ struct Person {
 
 impl Person {
     fn new(name: &str) -> Self {
-        Person { 
+        Person {
             name: name.to_string(),
             cnt: 0,
         }
@@ -99,16 +111,20 @@ impl Person {
 
 impl Subscriber for Person {
     fn update(&mut self, msg: Message) {
-        println!("Recived [{}] message from publisher for user [{}]", self.cnt + 1, self.name);
+        println!(
+            "Recived [{}] message from publisher for user [{}]",
+            self.cnt + 1,
+            self.name
+        );
         self.cnt += 1;
         match msg {
             Message::Shop(msg) => println!("{}", msg),
-            Message::Storage((msg, _)) => println!("{}", msg)
+            Message::Storage((msg, _)) => println!("{}", msg),
         }
     }
 }
 
-fn main(){
+fn main() {
     let mut shop = Shop::new();
     let mut storage = Storage::new();
 

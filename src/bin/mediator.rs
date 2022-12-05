@@ -1,24 +1,32 @@
 /**
-* Определяет объект, инкапсулирующий способ взаимодействия множества объектов. Посредник обеспечивает слабую связанность системы,
-* избавляя объекты от необходимости явно ссылаться друг на друга и позволяя тем самым независимо изменять взаимодействие между ними.
+* Определяет объект, инкапсулирующий способ взаимодействия множества объектов.
+* Посредник обеспечивает слабую связанность системы, избавляя объекты от
+* необходимости явно ссылаться друг на друга и позволяя тем самым независимо
+* изменять взаимодействие между ними.
 *
 * Применимость:
-* - имеются объекты, связи между которыми сложны и четко определены. Получающиеся при этом взаимозависимости не структурированы и трудны для понимания.
-* - нельзя повторно использовать объект, поскольку он обменивается информацией со многими другими объектами.
-* - поведение, распределенное между несколькими классами, должно поддаваться настройке без порождения множества подклассов.
+* - имеются объекты, связи между которыми сложны и четко определены. 
+*   Получающиеся при этом взаимозависимости не структурированы и трудны для
+*   понимания.
+* - нельзя повторно использовать объект, поскольку он обменивается информацией
+*   со многими другими объектами.
+* - поведение, распределенное между несколькими классами, должно поддаваться
+*   настройке без порождения множества подклассов.
 **/
-
-use std::{rc::{Weak, Rc}, cell::RefCell};
+use std::{
+    cell::RefCell,
+    rc::{Rc, Weak},
+};
 
 #[derive(Clone, Copy, PartialEq)]
 enum UserKind {
     Developer,
-    TeamLead
+    TeamLead,
 }
 #[derive(Debug, Clone)]
 enum Event {
     CreateUser,
-    ChangeUser
+    ChangeUser,
 }
 trait Colleague {
     fn send(&self, event: Event);
@@ -30,13 +38,13 @@ trait Mediator {
     fn send(&mut self, event: Event);
     fn register(&mut self, colleague: Rc<dyn Colleague>);
 }
-struct MediatorColleague{
+struct MediatorColleague {
     colleagues: Vec<Weak<dyn Colleague>>,
 }
 
 impl MediatorColleague {
     fn new() -> Self {
-        MediatorColleague { colleagues: vec![]}
+        MediatorColleague { colleagues: vec![] }
     }
 }
 
@@ -52,9 +60,9 @@ impl Mediator for MediatorColleague {
                                 colleague.recv(event.clone());
                             }
                         }
-                        None => need = true
+                        None => need = true,
                     }
-                }        
+                }
             }
             Event::ChangeUser => {
                 for colleague in &self.colleagues {
@@ -62,9 +70,9 @@ impl Mediator for MediatorColleague {
                         Some(colleague) => {
                             colleague.recv(event.clone());
                         }
-                        None => need = true
+                        None => need = true,
                     }
-                }        
+                }
             }
         }
         if need {
@@ -78,12 +86,15 @@ impl Mediator for MediatorColleague {
 
 struct User {
     kind: UserKind,
-    mediator: Weak<RefCell<dyn Mediator>>
+    mediator: Weak<RefCell<dyn Mediator>>,
 }
 
 impl User {
     fn new(kind: UserKind, mediator: Rc<RefCell<dyn Mediator>>) -> Self {
-        User{kind, mediator: Rc::downgrade(&mediator)}
+        User {
+            kind,
+            mediator: Rc::downgrade(&mediator),
+        }
     }
 }
 
@@ -101,7 +112,7 @@ impl Colleague for User {
     }
 }
 
-fn main(){
+fn main() {
     let mediator = Rc::new(RefCell::new(MediatorColleague::new()));
 
     let user1 = Rc::new(User::new(UserKind::TeamLead, mediator.clone()));
@@ -110,7 +121,7 @@ fn main(){
     (*mediator).borrow_mut().register(user2.clone());
     let user3 = Rc::new(User::new(UserKind::Developer, mediator.clone()));
     (*mediator).borrow_mut().register(user3.clone());
-    
+
     user2.send(Event::CreateUser);
     user1.send(Event::ChangeUser);
 }
