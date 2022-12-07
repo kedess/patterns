@@ -1,25 +1,42 @@
 /**
- * Позволяет избежать привязки отправителя запроса к его получателю, давая шанс 
- * обработать запрос нескольким объектам. Связывает объекты получатели в цепочку 
- * и передает запрос вдоль этой цепочки, пока его не обработают.
+ * Шаблон «Цепочка ответственности» содержит исходный управляющий объект и ряд
+ * обрабатывающих объектов. Каждый обрабатывающий объект содержит логику,
+ * определяющую типы командных объектов, которые он может обрабатывать, а
+ * остальные передаются по цепочке следующему обрабатывающему объекту.
+ *
+ * Шаблон «Цепочка ответственности» позволяет создавать цепочки объектов.
+ * Запрос входит с одного конца цепочки и движется от объекта к объекту, пока
+ * не будет найден подходящий обработчик.
  *
  * Применимость:
  * - когда есть более одного объекта, способного обработать запрос, причем
  *   настоящий обработчик заранее неизвестен и должен быть найден автоматически
- * - когда вы хотите отправить запрос одному из нескольких объектов, не указывая 
+ * - когда вы хотите отправить запрос одному из нескольких объектов, не указывая
  *   явно, какому именно.
  * - когда набор объектов, способных обработать запрос, должен задаваться
  *   динамически.
 **/
 
-#[derive(Clone)]
-enum Event {
-    Validate,
-    Save,
-}
 trait Handler {
-    fn execute(&self, event: Event);
+    fn execute(&self);
     fn set_next(&mut self, handler: Box<dyn Handler>);
+}
+
+struct Processing {
+    handler: Option<Box<dyn Handler>>,
+}
+impl Processing {
+    fn new() -> Self {
+        Processing { handler: None }
+    }
+    fn set_handler(&mut self, handler: Box<dyn Handler>) {
+        self.handler = Some(handler);
+    }
+    fn process(&self) {
+        if let Some(ref handler) = self.handler {
+            handler.execute();
+        }
+    }
 }
 
 struct Validator {
@@ -33,15 +50,12 @@ impl Validator {
     }
 }
 impl Handler for Validator {
-    fn execute(&self, event: Event) {
-        match event {
-            Event::Validate => {
-                println!("Validate document");
-            }
-            _ => {
-                if let Some(ref handler) = self.handler {
-                    handler.execute(event);
-                }
+    fn execute(&self) {
+        let is_validate = true;
+        println!("Validate document");
+        if is_validate {
+            if let Some(ref handler) = self.handler {
+                handler.execute();
             }
         }
     }
@@ -60,53 +74,20 @@ impl Keeper {
     }
 }
 impl Handler for Keeper {
-    fn execute(&self, event: Event) {
-        match event {
-            Event::Save => {
-                println!("Save document");
-            }
-            _ => {
-                if let Some(ref handler) = self.handler {
-                    handler.execute(event);
-                }
-            }
-        }
+    fn execute(&self) {
+        println!("Save document");
     }
     fn set_next(&mut self, handler: Box<dyn Handler>) {
         self.handler = Some(handler);
     }
 }
-struct Document {
-    handler: Option<Box<dyn Handler>>,
-}
-
-impl Document {
-    fn new() -> Self {
-        Document {
-            handler: Default::default(),
-        }
-    }
-    fn set_handler(&mut self, handler: Box<dyn Handler>) {
-        self.handler = Some(handler);
-    }
-    fn validate(&self) {
-        if let Some(ref handler) = self.handler {
-            handler.execute(Event::Validate);
-        }
-    }
-    fn save(&self) {
-        if let Some(ref handler) = self.handler {
-            handler.execute(Event::Save);
-        }
-    }
-}
 
 fn main() {
-    let mut document = Document::new();
-    let mut handler = Box::new(Validator::new());
-    handler.set_next(Box::new(Keeper::new()));
+    let mut processing = Processing::new();
 
-    document.set_handler(handler);
-    document.validate();
-    document.save();
+    let mut validator = Box::new(Validator::new());
+    validator.set_next(Box::new(Keeper::new()));
+    processing.set_handler(validator);
+
+    processing.process();
 }
