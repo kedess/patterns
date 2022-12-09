@@ -1,56 +1,57 @@
-use std::path::Path;
-
 /**
  * Шаблонный метод определяет основу алгоритма и позволяет подклассам
  * переопределить некоторые шаги алгоритма, не изменяя его структуру в целом.
  *
- * Применимость:
+ * Когда использовать:
  * - когда нужно однократно использовать инвариантные части алгоритма, оставляя
  *   реализацию изменяющегося поведения на усмотрение подклассов
  * - когда нужно вычленить и локализовать в одном классе поведение, общее для
  *   всех подклассов, дабы избежать дублирование кода
 **/
-struct DocumentEntity {}
-trait Document {
-    fn open(&self, path: &str) -> Option<DocumentEntity> {
-        if Path::new(path).extension().unwrap() == self.allow_extension() {
-            return Some(DocumentEntity {});
-        }
-        None
+
+trait TestingSystem {
+    fn prepare(&self);
+    fn finish(&self);
+    fn run(&self) {
+        self.prepare();
+        println!("Run tests");
+        self.finish();
     }
-    fn allow_extension(&self) -> &'static str;
 }
 
-struct DocumentWord {}
-impl DocumentWord {
+struct TestingSystemWin {}
+impl TestingSystemWin {
     fn new() -> Self {
-        DocumentWord {}
+        TestingSystemWin {}
     }
 }
-impl Document for DocumentWord {
-    fn allow_extension(&self) -> &'static str {
-        "doc"
+impl TestingSystem for TestingSystemWin {
+    fn prepare(&self) {
+        println!("Download windows docker image");
+    }
+    fn finish(&self) {
+        println!("Remome windows docker image");
     }
 }
-struct DocumentPDF {}
-impl DocumentPDF {
+
+struct TestingSystemLinux {}
+impl TestingSystemLinux {
     fn new() -> Self {
-        DocumentPDF {}
+        TestingSystemLinux {}
     }
 }
-impl Document for DocumentPDF {
-    fn allow_extension(&self) -> &'static str {
-        "pdf"
+impl TestingSystem for TestingSystemLinux {
+    fn prepare(&self) {
+        println!("Download linux docker image");
+    }
+    fn finish(&self) {
+        println!("Remome linux docker image");
     }
 }
 
 fn main() {
-    let document = DocumentWord::new();
-    if let Some(_) = document.open("/home/user/rules.doc") {
-        println!("Document opened");
-    }
-    let document = DocumentPDF::new();
-    if let Some(_) = document.open("/home/user/rules.doc") {
-        println!("Document opened");
-    }
+    let testing_system = Box::new(TestingSystemLinux::new());
+    testing_system.run();
+    let testing_system = Box::new(TestingSystemWin::new());
+    testing_system.run();
 }
