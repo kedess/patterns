@@ -2,11 +2,11 @@ use std::cell::RefCell;
 /**
  *  Шаблон определяет зависимость между объектами, чтобы при изменении состояния
  *  одного из них все зависящие от него оповещаются и автоматически обновляются.
- * 
+ *
  * Применимость:
- * - когда при модификации одного объекта требуется изменить другие и вы не 
+ * - когда при модификации одного объекта требуется изменить другие и вы не
  *   знаете, сколько именно объектов нужно изменить.
- * - когда один объект должен оповещать других, не делая предположений об 
+ * - когда один объект должен оповещать других, не делая предположений об
  *   уведомляемых объектах. Другими словами, вы не хотите, чтобы объекты были
  *   тесно связанны между собой.
  *
@@ -131,13 +131,13 @@ fn main() {
     let person1 = Rc::new(RefCell::new(Person::new("Person number 1")));
     let person2 = Rc::new(RefCell::new(Person::new("Person number 2")));
 
-    shop.add_subscriber(person1.clone());
+    shop.add_subscriber(person1);
     shop.add_subscriber(person2.clone());
-    storage.add_subscriber(person2.clone());
+    storage.add_subscriber(person2);
     {
         let person3 = Rc::new(RefCell::new(Person::new("Person number 3")));
         shop.add_subscriber(person3.clone());
-        storage.add_subscriber(person3.clone());
+        storage.add_subscriber(person3);
         shop.notify();
         storage.notify();
     }
