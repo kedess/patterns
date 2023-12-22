@@ -32,23 +32,49 @@ impl Button for ButtonGTK {
         println!("Clicked GTK button");
     }
 }
+trait Label {
+    fn onfocus(&self);
+}
+struct LabelQT {}
+impl Label for LabelQT {
+    fn onfocus(&self) {
+        println!("Onfocus QT label");
+    }
+}
+struct LabelGTK {}
+impl Label for LabelGTK {
+    fn onfocus(&self) {
+        println!("Onfocus GTK label");
+    }
+}
 trait WidgetFactory {
-    fn button(&self) -> Box<dyn Button>;
+    // По сути фабричные методы из паттерна "фабричный метод"
+    fn create_button(&self) -> Box<dyn Button>;
+    fn create_label(&self) -> Box<dyn Label>;
 }
 struct QtWidgetFactory {}
 impl WidgetFactory for QtWidgetFactory {
-    fn button(&self) -> Box<dyn Button> {
+    fn create_button(&self) -> Box<dyn Button> {
         Box::new(ButtonQT {})
+    }
+    fn create_label(&self) -> Box<dyn Label> {
+        Box::new(LabelQT {})
     }
 }
 struct GtkWidgetFactory {}
 impl WidgetFactory for GtkWidgetFactory {
-    fn button(&self) -> Box<dyn Button> {
+    fn create_button(&self) -> Box<dyn Button> {
         Box::new(ButtonGTK {})
+    }
+    fn create_label(&self) -> Box<dyn Label> {
+        Box::new(LabelGTK {})
     }
 }
 fn main() {
+    // Мы выбираем UI GTK и все элементы создаются в этом стиле
     let factory = GtkWidgetFactory {};
-    let button = factory.button();
+    let button = factory.create_button();
+    let label = factory.create_label();
     button.click();
+    label.onfocus();
 }
