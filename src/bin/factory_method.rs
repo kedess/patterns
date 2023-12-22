@@ -17,41 +17,68 @@
  *   когда клиент не знает, какой именно подкласс может ему понадобиться.
 */
 
-trait Interviewer {
-    fn ask(&self);
+trait Transport {
+    fn deliver(&self);
 }
 
-struct Developer {}
-impl Interviewer for Developer {
-    fn ask(&self) {
-        println!("Ask developer");
+struct Car {}
+impl Car {
+    fn new() -> Self {
+        Car {}
     }
 }
-struct Tester {}
-impl Interviewer for Tester {
-    fn ask(&self) {
-        println!("Ask tester");
+impl Transport for Car {
+    fn deliver(&self) {
+        println!("Delivery by car");
+    }
+}
+struct Ship {}
+impl Ship {
+    fn new() -> Self {
+        Ship {}
+    }
+}
+impl Transport for Ship {
+    fn deliver(&self) {
+        println!("Delivery by ship");
     }
 }
 
-trait Interview {
+trait Logistics {
     // Фабричный метод
-    fn make_interviewer(&self) -> Box<dyn Interviewer>;
+    fn make_transport(&self) -> Box<dyn Transport>;
 }
-struct InterviewWithDeveloper {}
-impl Interview for InterviewWithDeveloper {
-    fn make_interviewer(&self) -> Box<dyn Interviewer> {
-        Box::new(Developer {})
+struct RoadLogistics {}
+impl RoadLogistics {
+    fn new() -> Self {
+        RoadLogistics {}
     }
 }
-struct InterviewWithTester {}
-impl Interview for InterviewWithTester {
-    fn make_interviewer(&self) -> Box<dyn Interviewer> {
-        Box::new(Tester {})
+impl Logistics for RoadLogistics {
+    // Переопределяем фабричный метод
+    fn make_transport(&self) -> Box<dyn Transport> {
+        Box::new(Car::new())
+    }
+}
+struct SeaLogistics {}
+impl SeaLogistics {
+    fn new() -> Self {
+        SeaLogistics {}
+    }
+}
+impl Logistics for SeaLogistics {
+    // Переопределяем фабричный метод
+    fn make_transport(&self) -> Box<dyn Transport> {
+        Box::new(Ship::new())
     }
 }
 fn main() {
-    let interview = InterviewWithDeveloper {};
-    let interviewer = interview.make_interviewer();
-    interviewer.ask();
+    let logistic_list: Vec<Box<dyn Logistics>> = vec![
+        Box::new(RoadLogistics::new()),
+        Box::new(SeaLogistics::new()),
+    ];
+    for logistics in logistic_list {
+        let transport = logistics.make_transport();
+        transport.deliver();
+    }
 }
