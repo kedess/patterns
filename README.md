@@ -17,6 +17,7 @@
 - Абстрактная фабрика (abstract_factory.rs)
 - Фабричный метод (factory_method.rs)
 - Строитель (builder.rs)
+- Прототип (prototype.rs)
 
 #### Структурные:
 - Адаптер (adapter.rs)
