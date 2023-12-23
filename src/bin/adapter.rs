@@ -1,64 +1,67 @@
 /**
- * Шаблон «Адаптер» позволяет помещать несовместимый объект в обёртку, чтобы он
- * оказался совместимым с другим классом.
+ * Адаптер — это структурный паттерн проектирования, который позволяет объектам
+ * с несовместимыми интерфейсами работать вместе.
  * Шаблон проектирования «Адаптер» позволяет использовать интерфейс
  * существующего класса как другой интерфейс. Этот шаблон часто применяется для
  * обеспечения работы одних классов с другими без изменения их исходного кода.
+ * Когда использовать:
+ * - Когда вы хотите использовать сторонний класс, но его интерфейс не соответствует
+ * остальному коду приложения
+ * - Когда вам нужно использовать несколько существующих подклассов, но в них не хватает
+ * какой-то общей функциональности, причём расширить суперкласс вы не можете
 **/
 
-trait Document {
-    fn print(&self);
+trait Serialize {
+    fn serialize(&self) -> Vec<u8>;
 }
-struct Text {
-    content: String,
+struct Document {
+    data: String,
 }
-impl Text {
-    fn new(content: &str) -> Self {
-        Text {
-            content: content.to_string(),
+impl Document {
+    fn new(data: &str) -> Self {
+        Document {
+            data: data.to_string(),
         }
-    }
-}
-impl Document for Text {
-    fn print(&self) {
-        println!("{}", self.content);
     }
 }
 struct Image {
-    description: String,
-    #[allow(unused)]
     data: Vec<u8>,
 }
 impl Image {
-    fn new(description: &str, data: &[u8]) -> Self {
+    fn new(data: &[u8]) -> Self {
         Image {
-            description: description.to_string(),
-            data: Vec::from(data),
+            data: data.to_vec(),
         }
     }
-    fn show(&self) {
-        println!("{}", self.description);
+}
+impl Serialize for Image {
+    fn serialize(&self) -> Vec<u8> {
+        self.data.clone()
     }
 }
-struct ImageAdapter {
-    image: Image,
+
+struct DocumentAdapter {
+    document: Document,
 }
-impl ImageAdapter {
-    fn new(image: Image) -> Self {
-        ImageAdapter { image }
+
+impl DocumentAdapter {
+    fn new(document: Document) -> Self {
+        DocumentAdapter { document }
     }
 }
-impl Document for ImageAdapter {
-    fn print(&self) {
-        self.image.show();
+
+impl Serialize for DocumentAdapter {
+    fn serialize(&self) -> Vec<u8> {
+        self.document.data.as_bytes().to_vec()
     }
 }
+
 fn main() {
-    let documents: Vec<Box<dyn Document>> = vec![Box::new(
-        Text::new("text")),
-        Box::new(ImageAdapter::new(Image::new("image", &[]))),
+    let objects: Vec<Box<dyn Serialize>> = vec![
+        Box::new(Image::new(&[0, 0, 0, 0])),
+        Box::new(DocumentAdapter::new(Document::new("document"))),
     ];
-    for doc in documents{
-        doc.print();
+    for doc in objects {
+        doc.serialize();
     }
 }
