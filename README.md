@@ -18,6 +18,7 @@
 - Фабричный метод (factory_method.rs)
 - Строитель (builder.rs)
 - Прототип (prototype.rs)
+- Одиночка (singleton.rs)
 
 #### Структурные:
 - Адаптер (adapter.rs)
