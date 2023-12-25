@@ -24,6 +24,7 @@
 - Адаптер (adapter.rs)
 - Мост (bridge.rs)
 - Компоновщик (composite.rs)
+- Декоратор (decorator.rs)
 
 Все примеры находятся в папке:
 ```bash

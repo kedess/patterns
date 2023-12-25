@@ -7,6 +7,11 @@
  * класса. Шаблон часто используется для соблюдения принципа единственной
  * обязанности (Single Responsibility Principle), поскольку позволяет разделить
  * функциональность между классами для решения конкретных задач.
+ *
+ * Когда использовать:
+ * - Когда вам нужно добавлять обязанности объектам на лету, незаметно для кода,
+ * который их использует
+ * - Когда нельзя расширить обязанности объекта с помощью наследования
 **/
 
 trait Coffe {
@@ -24,17 +29,17 @@ impl Coffe for SimpleCoffe {
     }
 }
 
-struct WrapperMilkCoffe {
+struct MilkDecoratorCoffe {
     coffe: Box<dyn Coffe>,
 }
 
-impl WrapperMilkCoffe {
+impl MilkDecoratorCoffe {
     fn new(coffe: Box<dyn Coffe>) -> Self {
-        WrapperMilkCoffe { coffe }
+        MilkDecoratorCoffe { coffe }
     }
 }
 
-impl Coffe for WrapperMilkCoffe {
+impl Coffe for MilkDecoratorCoffe {
     fn cost(&self) -> f32 {
         self.coffe.cost() * 1.1
     }
@@ -44,7 +49,7 @@ impl Coffe for WrapperMilkCoffe {
 }
 
 fn main() {
-    let milk_coffe = WrapperMilkCoffe::new(Box::new(SimpleCoffe {}));
+    let milk_coffe = MilkDecoratorCoffe::new(Box::new(SimpleCoffe {}));
     println!(
         "Description: {}\nCost: {}",
         milk_coffe.description(),
