@@ -25,6 +25,7 @@
 - Мост (bridge.rs)
 - Компоновщик (composite.rs)
 - Декоратор (decorator.rs)
+- Фасад (facade.rs)
 
 Все примеры находятся в папке:
 ```bash
