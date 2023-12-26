@@ -26,6 +26,7 @@
 - Компоновщик (composite.rs)
 - Декоратор (decorator.rs)
 - Фасад (facade.rs)
+- Легковес (flyweight.rs)
 
 Все примеры находятся в папке:
 ```bash
