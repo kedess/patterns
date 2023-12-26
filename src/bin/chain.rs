@@ -29,10 +29,13 @@ impl Processing {
     fn new() -> Self {
         Processing { handler: None }
     }
-    fn set_handler(&mut self, handler: Box<dyn Handler>) {
+}
+
+impl Handler for Processing {
+    fn set_next(&mut self, handler: Box<dyn Handler>) {
         self.handler = Some(handler);
     }
-    fn process(&self) {
+    fn execute(&self) {
         if let Some(ref handler) = self.handler {
             handler.execute();
         }
@@ -53,6 +56,7 @@ impl Handler for Validator {
     fn execute(&self) {
         let is_validate = true;
         println!("Validate document");
+        // Если бы проверка не прошла, то цепочка бы разорвалась
         if is_validate {
             if let Some(ref handler) = self.handler {
                 handler.execute();
@@ -84,10 +88,11 @@ impl Handler for Keeper {
 
 fn main() {
     let mut processing = Processing::new();
-
     let mut validator = Box::new(Validator::new());
-    validator.set_next(Box::new(Keeper::new()));
-    processing.set_handler(validator);
+    let keeper = Box::new(Keeper::new());
 
-    processing.process();
+    validator.set_next(keeper);
+    processing.set_next(validator);
+
+    processing.execute();
 }
