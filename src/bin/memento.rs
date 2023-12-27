@@ -1,5 +1,5 @@
 /**
-* Шаблон «Хранитель» фиксирует и хранит текущее состояние объекта, чтобы оно 
+* Шаблон «Хранитель» фиксирует и хранит текущее состояние объекта, чтобы оно
 * легко восстанавливалось.
 *
 * Шаблон «Хранитель» позволяет восстанавливать объект в его предыдущем состоянии
@@ -7,7 +7,7 @@
 *
 * Когда использовать:
 * - когда необходимо сохранить мгновенный снимок состояния объекта
-*   (или его части), чтобы впоследствии объект можно было восстановить в том же 
+*   (или его части), чтобы впоследствии объект можно было восстановить в том же
 *   состоянии
 * - когда прямое получение этого состояния раскрывает детали реализации и нарушает
 *   инкапсуляцию объекта
@@ -18,7 +18,9 @@ struct MementoArticle {
 }
 impl MementoArticle {
     fn new(content: &str) -> Self {
-        MementoArticle { content: content.to_string() }
+        MementoArticle {
+            content: content.to_string(),
+        }
     }
     fn get_content(self) -> String {
         self.content
@@ -27,14 +29,14 @@ impl MementoArticle {
 
 struct Article {
     content: String,
-    memento: Option<MementoArticle>
+    memento: Option<MementoArticle>,
 }
 
 impl Article {
     fn new() -> Self {
         Article {
             content: Default::default(),
-            memento: Default::default()
+            memento: Default::default(),
         }
     }
     fn set_content(&mut self, content: &str) {
@@ -45,13 +47,12 @@ impl Article {
     }
     fn save(&mut self) {
         self.memento = Some(MementoArticle::new(&self.content));
-    }   
-    fn restore(&mut self){
+    }
+    fn restore(&mut self) {
         if let Some(memento) = self.memento.take() {
             self.content = memento.get_content();
         }
     }
-    
 }
 
 fn main() {

@@ -3,7 +3,7 @@
  * и предоставляет к нему глобальную точку доступа. Этот экземпляр создается внутри класса и предоставляется через статический метод.
  * Используется когда требуется глобальный доступ к экземпляру объекта или контроль над созданием
  * и инициализацией из любой части программы.
- * 
+ *
  * Когда использовать:
  * - Когда в программе должен быть единственный экземпляр какого-то класса, доступный всем клиентам
  * - Когда вам хочется иметь больше контроля над глобальными переменными
@@ -24,10 +24,10 @@ impl Dictionary {
             data: Default::default(),
         }
     }
-    pub fn insert(&mut self, key: i32, value: i32){
+    pub fn insert(&mut self, key: i32, value: i32) {
         self.data.insert(key, value);
     }
-    pub fn get(&self, key: &i32) -> Option<&i32>{
+    pub fn get(&self, key: &i32) -> Option<&i32> {
         self.data.get(key)
     }
     pub fn get_instance() -> &'static Mutex<Dictionary> {
@@ -45,5 +45,4 @@ fn main() {
         let dict = Dictionary::get_instance().lock().unwrap();
         println!("{:?}", dict.get(&1));
     }
-    
 }
