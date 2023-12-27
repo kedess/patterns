@@ -1,6 +1,8 @@
+use std::rc::Rc;
+
 /**
-* Инкапсулирует запрос как объект, позволяя тем самым задавать параметры 
-* клиентов для обработки соответствующих запросов, ставить запросы в очередь 
+* Инкапсулирует запрос как объект, позволяя тем самым задавать параметры
+* клиентов для обработки соответствующих запросов, ставить запросы в очередь
 * или прокотолировать их, а также поддерживать отмену операций.
 *
 * Применимость:
@@ -11,26 +13,19 @@
 *   выполнить повторно после аварийной остановки системы
 **/
 
-struct SimulationSystem {}
-impl SimulationSystem {
+struct BusinessLogic {}
+impl BusinessLogic {
     fn new() -> Self {
-        SimulationSystem {}
+        BusinessLogic {}
     }
-    fn start(&self) {
-        println!("Command: start simulation system");
+    fn open(&self) {
+        println!("Open transaction");
     }
-    fn stop(&self) {
-        println!("Command: stop simulation system");
+    fn validate(&self) {
+        println!("Validate transaction");
     }
-}
-
-struct StorageSystem {}
-impl StorageSystem {
-    fn new() -> Self {
-        StorageSystem {}
-    }
-    fn save(&self) {
-        println!("Command: save all results.");
+    fn close(&self) {
+        println!("Close transaction");
     }
 }
 
@@ -38,81 +33,83 @@ trait Command {
     fn execute(&self);
 }
 
-struct StartCommand<'a> {
-    system: &'a SimulationSystem,
+struct OpenCommand {
+    logic: Rc<BusinessLogic>,
 }
-impl<'a> StartCommand<'a> {
-    fn new(system: &'a SimulationSystem) -> Self {
-        StartCommand { system }
+impl OpenCommand {
+    fn new(logic: Rc<BusinessLogic>) -> Self {
+        OpenCommand { logic }
     }
 }
-impl<'a> Command for StartCommand<'a> {
+impl Command for OpenCommand {
     fn execute(&self) {
-        self.system.start();
+        self.logic.open();
     }
 }
-struct StopCommand<'a> {
-    system: &'a SimulationSystem,
+struct ValidateCommand {
+    logic: Rc<BusinessLogic>,
 }
-impl<'a> StopCommand<'a> {
-    fn new(system: &'a SimulationSystem) -> Self {
-        StopCommand { system }
+impl ValidateCommand {
+    fn new(logic: Rc<BusinessLogic>) -> Self {
+        ValidateCommand { logic }
     }
 }
-impl<'a> Command for StopCommand<'a> {
+impl Command for ValidateCommand {
     fn execute(&self) {
-        self.system.stop();
+        self.logic.validate();
+    }
+}
+struct CloseCommand {
+    logic: Rc<BusinessLogic>,
+}
+impl CloseCommand {
+    fn new(logic: Rc<BusinessLogic>) -> Self {
+        CloseCommand { logic }
+    }
+}
+impl Command for CloseCommand {
+    fn execute(&self) {
+        self.logic.close();
     }
 }
 
-struct SaveCommand<'a> {
-    storage: &'a StorageSystem,
-}
-impl<'a> SaveCommand<'a> {
-    fn new(storage: &'a StorageSystem) -> Self {
-        SaveCommand { storage }
-    }
-}
-impl<'a> Command for SaveCommand<'a> {
-    fn execute(&self) {
-        self.storage.save();
-    }
+struct UserInvoker {
+    open: OpenCommand,
+    validate: ValidateCommand,
+    close: CloseCommand,
 }
 
-struct UserInvoker<'a> {
-    start: StartCommand<'a>,
-    save: SaveCommand<'a>,
-    stop: StopCommand<'a>,
-}
-
-impl<'a> UserInvoker<'a> {
+impl UserInvoker {
     fn new(
-        start: StartCommand<'a>,
-        save: SaveCommand<'a>,
-        stop: StopCommand<'a>,
+        open: OpenCommand,
+        validate: ValidateCommand,
+        close: CloseCommand,
     ) -> Self {
-        UserInvoker { start, save, stop }
+        UserInvoker {
+            open,
+            validate,
+            close,
+        }
     }
-    fn start(&self) {
-        self.start.execute();
+    fn open(&self) {
+        self.open.execute();
     }
-    fn save(&self) {
-        self.save.execute();
+    fn validate(&self) {
+        self.validate.execute();
     }
-    fn stop(&self) {
-        self.stop.execute();
+    fn close(&self) {
+        self.close.execute();
     }
 }
 
 fn main() {
-    let storage = StorageSystem::new();
-    let system = SimulationSystem::new();
+    let logic = Rc::new(BusinessLogic::new());
     let user = UserInvoker::new(
-        StartCommand::new(&system),
-        SaveCommand::new(&storage),
-        StopCommand::new(&system),
+        OpenCommand::new(logic.clone()),
+        ValidateCommand::new(logic.clone()),
+        CloseCommand::new(logic),
     );
-    user.start();
-    user.save();
-    user.stop();
+    user.open();
+    user.validate();
+    user.close();
 }
