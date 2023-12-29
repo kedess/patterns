@@ -14,25 +14,21 @@ use std::cell::RefCell;
  * ! - подписчик не может отписаться, ссылка на subscriber удалиться, но только
  * !   во время следующего обновления publisher
  **/
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
 use std::vec::Vec;
 
-enum Message {
-    Shop(String),
-    Storage((String, usize)),
-}
-
 trait Publisher {
-    fn add_subscriber(&mut self, subscriber: Rc<RefCell<dyn Subscriber>>);
+    fn subscriber(&mut self, subscriber: Rc<RefCell<dyn Subscriber>>);
+    fn unsubscriber(&mut self, subscriber: Rc<RefCell<dyn Subscriber>>);
     fn notify(&mut self);
 }
 
 trait Subscriber {
-    fn update(&mut self, msg: Message);
+    fn update(&mut self, msg: String);
 }
 
 struct Shop {
-    subscribers: Vec<Weak<RefCell<dyn Subscriber>>>,
+    subscribers: Vec<Rc<RefCell<dyn Subscriber>>>,
 }
 
 impl Shop {
@@ -44,103 +40,63 @@ impl Shop {
 }
 
 impl Publisher for Shop {
-    fn add_subscriber(&mut self, subscriber: Rc<RefCell<dyn Subscriber>>) {
-        self.subscribers.push(Rc::downgrade(&subscriber));
+    fn subscriber(&mut self, subscriber: Rc<RefCell<dyn Subscriber>>) {
+        self.subscribers.push(subscriber.clone());
     }
-    fn notify(&mut self) {
-        let mut need = false;
-        for subscriber in &self.subscribers {
-            match subscriber.upgrade() {
-                Some(subscriber) => subscriber
-                    .borrow_mut()
-                    .update(Message::Shop("New discounts".to_string())),
-                None => need = true,
+    fn unsubscriber(&mut self, subscriber: Rc<RefCell<dyn Subscriber>>) {
+        let mut idx = -1;
+        for (i, sub) in self.subscribers.iter().enumerate() {
+            if sub.as_ptr() == subscriber.as_ptr() {
+                idx = i as i32;
+                break;
             }
         }
-        if need {
-            self.subscribers.retain(|x| x.upgrade().is_some());
+        if idx != -1 {
+            self.subscribers.remove(idx as usize);
         }
-    }
-}
-
-struct Storage {
-    subscribers: Vec<Weak<RefCell<dyn Subscriber>>>,
-}
-
-impl Storage {
-    fn new() -> Self {
-        Storage {
-            subscribers: Vec::new(),
-        }
-    }
-}
-
-impl Publisher for Storage {
-    fn add_subscriber(&mut self, subscriber: Rc<RefCell<dyn Subscriber>>) {
-        self.subscribers.push(Rc::downgrade(&subscriber));
     }
     fn notify(&mut self) {
-        let mut need = false;
         for subscriber in &self.subscribers {
-            match subscriber.upgrade() {
-                Some(subscriber) => subscriber.borrow_mut().update(
-                    Message::Storage(("Product has arrived".to_string(), 100)),
-                ),
-                None => need = true,
-            }
-        }
-        if need {
-            self.subscribers.retain(|x| x.upgrade().is_some());
+            subscriber
+                .borrow_mut()
+                .update("Hello from Shop".to_string());
         }
     }
 }
 
 struct Person {
     name: String,
-    cnt: usize,
 }
 
 impl Person {
     fn new(name: &str) -> Self {
         Person {
             name: name.to_string(),
-            cnt: 0,
         }
     }
 }
 
 impl Subscriber for Person {
-    fn update(&mut self, msg: Message) {
+    fn update(&mut self, msg: String) {
         println!(
-            "Recived [{}] message from publisher for user [{}]",
-            self.cnt + 1,
-            self.name
+            "Recived message [{}] from publisher for user [{}]",
+            msg, self.name
         );
-        self.cnt += 1;
-        match msg {
-            Message::Shop(msg) => println!("{}", msg),
-            Message::Storage((msg, _)) => println!("{}", msg),
-        }
     }
 }
 
 fn main() {
     let mut shop = Shop::new();
-    let mut storage = Storage::new();
 
-    let person1 = Rc::new(RefCell::new(Person::new("Person number 1")));
-    let person2 = Rc::new(RefCell::new(Person::new("Person number 2")));
+    let person1 = Rc::new(RefCell::new(Person::new("Person 1")));
+    let person2 = Rc::new(RefCell::new(Person::new("Person 2")));
+    let person3 = Rc::new(RefCell::new(Person::new("Person 3")));
 
-    shop.add_subscriber(person1);
-    shop.add_subscriber(person2.clone());
-    storage.add_subscriber(person2);
-    {
-        let person3 = Rc::new(RefCell::new(Person::new("Person number 3")));
-        shop.add_subscriber(person3.clone());
-        storage.add_subscriber(person3);
-        shop.notify();
-        storage.notify();
-    }
+    shop.subscriber(person1.clone());
+    shop.subscriber(person2.clone());
+    shop.subscriber(person3.clone());
     shop.notify();
-    storage.notify();
+
+    shop.unsubscriber(person1);
+    shop.notify();
 }
