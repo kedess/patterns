@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 /**
 * Шаблон «Хранитель» фиксирует и хранит текущее состояние объекта, чтобы оно
 * легко восстанавливалось.
@@ -29,7 +31,7 @@ impl MementoArticle {
 
 struct Article {
     content: String,
-    memento: Option<MementoArticle>,
+    memento: VecDeque<MementoArticle>,
 }
 
 impl Article {
@@ -46,10 +48,10 @@ impl Article {
         &self.content
     }
     fn save(&mut self) {
-        self.memento = Some(MementoArticle::new(&self.content));
+        self.memento.push_back(MementoArticle::new(&self.content));
     }
     fn restore(&mut self) {
-        if let Some(memento) = self.memento.take() {
+        if let Some(memento) = self.memento.pop_back() {
             self.content = memento.get_content();
         }
     }
@@ -58,11 +60,16 @@ impl Article {
 fn main() {
     let mut article = Article::new();
     article.set_content("First content");
-    println!("{:?}", article.get_content());
     article.save();
 
     article.set_content("Second content");
-    println!("{:?}", article.get_content());
-    article.restore();
-    println!("{:?}", article.get_content());
+    article.save();
+
+    article.set_content("Third content");
+    article.save();
+
+    for _ in 0..3 {
+        article.restore();
+        println!("{}", article.get_content());
+    }
 }
