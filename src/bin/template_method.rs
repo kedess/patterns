@@ -19,39 +19,39 @@ trait TestingSystem {
     }
 }
 
-struct TestingSystemWin {}
-impl TestingSystemWin {
+struct TestingSystemUbuntu {}
+impl TestingSystemUbuntu {
     fn new() -> Self {
-        TestingSystemWin {}
+        TestingSystemUbuntu {}
     }
 }
-impl TestingSystem for TestingSystemWin {
+impl TestingSystem for TestingSystemUbuntu {
     fn prepare(&self) {
-        println!("Download windows docker image");
+        println!("Download ubuntu docker image");
     }
     fn finish(&self) {
-        println!("Remome windows docker image");
+        println!("Remome ubuntu docker image");
     }
 }
 
-struct TestingSystemLinux {}
-impl TestingSystemLinux {
+struct TestingSystemDebian {}
+impl TestingSystemDebian {
     fn new() -> Self {
-        TestingSystemLinux {}
+        TestingSystemDebian {}
     }
 }
-impl TestingSystem for TestingSystemLinux {
+impl TestingSystem for TestingSystemDebian {
     fn prepare(&self) {
-        println!("Download linux docker image");
+        println!("Download debian docker image");
     }
     fn finish(&self) {
-        println!("Remome linux docker image");
+        println!("Remome debian docker image");
     }
 }
 
 fn main() {
-    let testing_system = Box::new(TestingSystemLinux::new());
+    let testing_system = Box::new(TestingSystemDebian::new());
     testing_system.run();
-    let testing_system = Box::new(TestingSystemWin::new());
+    let testing_system = Box::new(TestingSystemUbuntu::new());
     testing_system.run();
 }
