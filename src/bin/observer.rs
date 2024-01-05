@@ -43,9 +43,15 @@ impl Publisher for Shop {
     fn subscriber(&mut self, subscriber: Rc<RefCell<dyn Subscriber>>) {
         self.subscribers.push(subscriber.clone());
     }
+    #[allow(clippy::vtable_address_comparisons)]
     fn unsubscriber(&mut self, subscriber: Rc<RefCell<dyn Subscriber>>) {
         let mut idx = -1;
         for (i, sub) in self.subscribers.iter().enumerate() {
+            //FIXME: https://github.com/rust-lang/rust-clippy/issues/6524
+            /*
+             * Как решение можно добавить в trait Subsriber метод get_id, который будет возвращать
+             * уникальный id для объекта, например uuid
+             */
             if sub.as_ptr() == subscriber.as_ptr() {
                 idx = i as i32;
                 break;
